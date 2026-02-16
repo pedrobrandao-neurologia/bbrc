@@ -14,7 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      patients: {
+        Row: {
+          age: number
+          created_at: string
+          education: string
+          id: string
+          name: string
+        }
+        Insert: {
+          age: number
+          created_at?: string
+          education: string
+          id?: string
+          name: string
+        }
+        Update: {
+          age?: number
+          created_at?: string
+          education?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      test_sessions: {
+        Row: {
+          clock_score: number | null
+          created_at: string
+          delayed_score: number | null
+          fluency_count: number | null
+          id: string
+          immediate_score: number | null
+          incidental_score: number | null
+          learning_score: number | null
+          naming_score: number | null
+          patient_id: string
+          recognition_score: number | null
+          transcripts: Json | null
+        }
+        Insert: {
+          clock_score?: number | null
+          created_at?: string
+          delayed_score?: number | null
+          fluency_count?: number | null
+          id?: string
+          immediate_score?: number | null
+          incidental_score?: number | null
+          learning_score?: number | null
+          naming_score?: number | null
+          patient_id: string
+          recognition_score?: number | null
+          transcripts?: Json | null
+        }
+        Update: {
+          clock_score?: number | null
+          created_at?: string
+          delayed_score?: number | null
+          fluency_count?: number | null
+          id?: string
+          immediate_score?: number | null
+          incidental_score?: number | null
+          learning_score?: number | null
+          naming_score?: number | null
+          patient_id?: string
+          recognition_score?: number | null
+          transcripts?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_sessions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
