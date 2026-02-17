@@ -1,15 +1,15 @@
 // BBRC Target figures and synonyms
 export const TARGET_FIGURES = [
-  { name: 'sapato', synonyms: ['sapato', 'calcado', 'tenis', 'sapatilha'] },
-  { name: 'casa', synonyms: ['casa', 'casinha', 'moradia', 'lar', 'residencia'] },
-  { name: 'pente', synonyms: ['pente', 'escova', 'pentear'] },
-  { name: 'aviao', synonyms: ['aviao', 'aeronave', 'aeroplano', 'jato'] },
-  { name: 'balde', synonyms: ['balde', 'balde de agua', 'baldinho'] },
-  { name: 'tartaruga', synonyms: ['tartaruga', 'jabuti', 'jaboti', 'cagado', 'quelonio'] },
-  { name: 'livro', synonyms: ['livro', 'caderno', 'revista'] },
-  { name: 'chave', synonyms: ['chave', 'chaveiro'] },
-  { name: 'flor', synonyms: ['flor', 'rosa', 'margarida', 'florzinha'] },
-  { name: 'ferro', synonyms: ['ferro', 'ferro de passar', 'ferro eletrico', 'ferro de engomar'] },
+  { name: 'sapato', synonyms: ['sapato', 'sapatos', 'calcado', 'tenis', 'sapatilha', 'sapatinho'] },
+  { name: 'casa', synonyms: ['casa', 'casas', 'casinha', 'moradia', 'lar', 'residencia'] },
+  { name: 'pente', synonyms: ['pente', 'pentes', 'pentear', 'penteio'] },
+  { name: 'chave', synonyms: ['chave', 'chaves', 'chaveiro', 'chavinha'] },
+  { name: 'aviao', synonyms: ['aviao', 'avioes', 'aeronave', 'aeroplano', 'jato', 'aviaozinho'] },
+  { name: 'balde', synonyms: ['balde', 'baldes', 'balde de agua', 'baldinho'] },
+  { name: 'tartaruga', synonyms: ['tartaruga', 'tartarugas', 'jabuti', 'jaboti', 'cagado', 'quelonio'] },
+  { name: 'livro', synonyms: ['livro', 'livros', 'livrinho', 'caderno', 'revista'] },
+  { name: 'colher', synonyms: ['colher', 'colheres', 'colherinha', 'talher'] },
+  { name: 'arvore', synonyms: ['arvore', 'arvores', 'arvorezinha', 'arbusto', 'planta'] },
 ];
 
 export const RECOGNITION_ORIGINALS = TARGET_FIGURES.map(f => f.name);
@@ -26,25 +26,39 @@ export function normalize(text: string): string {
 
 // Match transcript against the 10 target figures
 // Returns a Set of matched figure names (unique only)
+// Uses substring matching to handle plurals and STT variations
 export function matchTargetFigures(transcript: string): Set<string> {
   const normalizedTranscript = normalize(transcript);
-  const words = normalizedTranscript.split(/\s+/);
+  const words = normalizedTranscript.split(/\s+/).filter(w => w.length > 0);
   const matched = new Set<string>();
 
   for (const figure of TARGET_FIGURES) {
+    if (matched.has(figure.name)) continue;
+
     for (const synonym of figure.synonyms) {
       const normalizedSynonym = normalize(synonym);
-      // Check if any word matches or if multi-word synonym is contained
+
       if (normalizedSynonym.includes(' ')) {
+        // Multi-word synonym: check if contained in transcript
         if (normalizedTranscript.includes(normalizedSynonym)) {
           matched.add(figure.name);
           break;
         }
       } else {
-        if (words.includes(normalizedSynonym)) {
-          matched.add(figure.name);
-          break;
+        // Single-word synonym: check exact match OR if any transcript word
+        // starts with the synonym (handles plurals like "sapatos" -> "sapato")
+        // Also check if synonym starts with any word (handles truncated STT output)
+        for (const word of words) {
+          if (
+            word === normalizedSynonym ||
+            (normalizedSynonym.length >= 4 && word.startsWith(normalizedSynonym)) ||
+            (word.length >= 4 && normalizedSynonym.startsWith(word))
+          ) {
+            matched.add(figure.name);
+            break;
+          }
         }
+        if (matched.has(figure.name)) break;
       }
     }
   }
