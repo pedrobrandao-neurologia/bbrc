@@ -92,7 +92,8 @@ export function useRecorder(): UseRecorderResult {
       }
     };
 
-    mediaRecorder.start(250);
+    // Don't use timeslice — collect one big chunk on stop for a valid container
+    mediaRecorder.start();
     setIsRecording(true);
   }, []);
 
@@ -116,6 +117,14 @@ export function useRecorder(): UseRecorderResult {
         if (stream) {
           stream.getTracks().forEach(t => t.stop());
           streamRef.current = null;
+        }
+
+        // Skip transcription for very small recordings (< 1KB likely silence/empty)
+        if (blob.size < 1000) {
+          console.warn('Recording too short, skipping transcription');
+          setIsRecording(false);
+          resolve('');
+          return;
         }
 
         try {
