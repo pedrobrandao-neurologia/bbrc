@@ -23,8 +23,13 @@ serve(async (req) => {
       throw new Error('No audio file provided');
     }
 
+    // Read into ArrayBuffer and create a fresh Blob to avoid
+    // Deno edge-runtime issues with re-posting FormData File objects
+    const arrayBuffer = await audioFile.arrayBuffer();
+    const freshBlob = new Blob([arrayBuffer], { type: audioFile.type || 'audio/webm' });
+
     const apiFormData = new FormData();
-    apiFormData.append('file', audioFile);
+    apiFormData.append('file', freshBlob, audioFile.name || 'recording.webm');
     apiFormData.append('model_id', 'scribe_v2');
     apiFormData.append('language_code', 'por');
     apiFormData.append('tag_audio_events', 'false');
@@ -48,9 +53,10 @@ serve(async (req) => {
     return new Response(JSON.stringify(transcription), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('STT Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
