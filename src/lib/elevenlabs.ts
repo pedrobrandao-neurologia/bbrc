@@ -33,9 +33,9 @@ export async function speakText(text: string): Promise<void> {
   });
 }
 
-export async function transcribeAudio(audioBlob: Blob): Promise<string> {
+export async function transcribeAudio(audioBlob: Blob, filename = 'recording.webm'): Promise<string> {
   const formData = new FormData();
-  formData.append('audio', audioBlob, 'recording.webm');
+  formData.append('audio', audioBlob, filename);
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/elevenlabs-transcribe`, {
     method: 'POST',
